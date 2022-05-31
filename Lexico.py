@@ -2,7 +2,7 @@ from ctypes.wintypes import tagMSG
 import re
 from unicodedata import name
 from Gram import gramatica
-from tkinter import ttk
+from tkinter import StringVar, ttk
 
 import tkinter
 import pandas as pd
@@ -32,9 +32,13 @@ def ObtenerCadena():
     x= entry.get()
     evaluate(x)
 def evaluate(input):
-    divided = input.split()
+    #SUBSTRAER LAS PALABRAS QUE SE ENCUENTREN EN LOS RESULTADOS PARA DEJAR LOS IDS SUELTOS
+    #MOSTRAR LOS ERRORES LEXICOS QUE SE ENCUENTREM
     for i in range(len(gram.reserved)):
         result = re.findall(r""+gram.reserved[i]+"\\b",input)
+        # subCadenaIn = input[:result.start()]
+        # subCadenaFin = input[result.end():]
+        # input = subCadenaIn+subCadenaFin
         if(i%2==0):
             table.insert('','end',values=(gram.tokens[i],result,len(result)),tags=('odd'))
         else:
@@ -47,12 +51,31 @@ def evaluate(input):
             table.insert('','end',values=(gram.tokens[i+7],result,len(result)),tags=('odd'))
     divided = input.split()
     ids=[]
+    print(f"^{gram.id}")
     for i in range(len(divided)):
-        expression = re.compile(f"{gram.id}")
+        expression = re.compile(f"(\({{1}}{gram.id}\){{1}})|{gram.id}")
         result2 = re.fullmatch(expression, divided[i])
+        parentesis = divided[i]
         if(result2!=None):
-            ids.append(divided[i])
+            if(parentesis[0]=="("):
+                substring=parentesis[1:-1]
+                ids.append(substring)
+            else:
+                ids.append(divided[i])
     table.insert('','end',values=("IDS",ids,len(ids)),tags=('odd'))
+    denegated = []
+    chain=""
+    for i in range(len(gram.simbols2)):
+        result = re.findall(gram.simbols2[i],input)
+        # subCadenaIn = input[:result.start()]
+        # subCadenaFin = input[result.end():]
+        # input = subCadenaIn+subCadenaFin
+        if(len(result)>0):
+            for j in range(len(result)):
+                chain=chain+result[j]+", "
+    print(chain)
+    textTitle.set(chain)
+        
 
 if __name__ == "__main__":
     gram = gramatica()
@@ -61,7 +84,9 @@ if __name__ == "__main__":
     entry.config(width=50)
     # Posicionarla en la ventana.
     entry.place(x=120, y=50)
-
+    textTitle=StringVar()
+    texto2 = tkinter.Label(window,text="TOKENS IRRECONOCIDOS:",font=12,background='#D7FF90').place(x=60,y=130) 
+    texto1 = tkinter.Label(window,text="",font=12,textvariable= textTitle,background='#D7FF90').place(x=60,y=160) 
     T = tkinter.Text(window, height = 10, width = 52)
     boton = tkinter.Button(text="verificar tokens", command=ObtenerCadena)
     boton.place(x=150, y=90)
